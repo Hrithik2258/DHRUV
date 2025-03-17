@@ -29,18 +29,17 @@ app.get("/", (req, res) => {
 });
 
 // Import Routes
-app.use("/api/power", require("./routes/power")); // Example: http://your-server-ip:10000/api/power
+app.use("/api/power", require("./routes/power")); // Example: http://your-server-ip:5000/api/power
 
 // Connect to MongoDB
-const PORT = process.env.PORT || 10000;
-const MONGO_URL = process.env.MONGO_URL || "mongodb://0.0.0.0:27017/yourDB"; // Use 0.0.0.0 to bind to all IPs
+const PORT = process.env.PORT || 5000;
+const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/yourDB"; // Use 127.0.0.1 instead of 0.0.0.0 for localhost
 
 mongoose
-  .connect(MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(MONGO_URL)
   .then(() => {
+    console.log("✅ MongoDB Connected Successfully!");
+
     const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server running on: http://0.0.0.0:${PORT}`);
     });
@@ -49,15 +48,18 @@ mongoose
     server.keepAliveTimeout = 120000; // 120 seconds
     server.headersTimeout = 120000;
   })
-  .catch((error) => console.log(`❌ MongoDB connection error: ${error.message}`));
+  .catch((error) => {
+    console.error(`❌ MongoDB connection error: ${error.message}`);
+    process.exit(1);
+  });
 
-// Handle SIGKILL, SIGTERM to prevent crashes
+// Graceful Shutdown Handlers
 process.on("SIGTERM", () => {
   console.log("SIGTERM received. Shutting down gracefully...");
   process.exit(0);
 });
 
-process.on("SIGKILL", () => {
-  console.log("SIGKILL received. Shutting down immediately...");
-  process.exit(1);
+process.on("SIGINT", () => {
+  console.log("SIGINT received. Shutting down gracefully...");
+  process.exit(0);
 });
