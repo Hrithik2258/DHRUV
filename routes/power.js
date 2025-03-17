@@ -39,25 +39,7 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// 3️⃣ **PUT - Update Power Record by ID**
-router.put("/update/:id", async (req, res) => {
-  try {
-    const { voltage, frequency, thresholdVoltage, thirdHarmonic, fifthHarmonic, seventhHarmonic } = req.body;
 
-    const updatedPower = await Power.findByIdAndUpdate(
-      req.params.id,
-      { voltage, frequency, thresholdVoltage, thirdHarmonic, fifthHarmonic, seventhHarmonic },
-      { new: true }
-    );
-
-    if (!updatedPower) return res.status(404).json({ error: "Record not found" });
-
-    res.json({ message: "Power data updated successfully", data: updatedPower });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Server Error");
-  }
-});
 
 // 4️⃣ **DELETE - Remove a Power Record by ID**
 router.delete("/delete/:id", async (req, res) => {
