@@ -23,13 +23,13 @@ router.get("/getall", async (req, res) => {
 // 2️⃣ **POST - Add a Power Record**
 router.post("/add", async (req, res) => {
   try {
-    const { voltage, frequency, thresholdVoltage, thirdHarmonic, fifthHarmonic } = req.body;
+    const { Voltage, Frequency, THD Voltage, Harmonic 3rd, Harmonic 5th,Harmonic 7th } = req.body;
 
-    if (!voltage || !frequency || !thresholdVoltage || !thirdHarmonic || !fifthHarmonic ) {
+    if (!Voltage || !Frequency || !THD Voltagee || !Harmonic 3rd || !Harmonic 5th,Harmonic 7th ) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const newPower = new Power({ voltage, frequency, thresholdVoltage, thirdHarmonic, fifthHarmonic});
+    const newPower = new Power({ Voltage, Frequency, THD Voltage, Harmonic 3rd, Harmonic 5th, Harmonic 7th});
     await newPower.save();
 
     res.json({ message: "Power data added successfully", data: newPower });
