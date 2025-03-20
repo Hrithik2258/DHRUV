@@ -25,7 +25,7 @@ router.post("/add", async (req, res) => {
   try {
     const { voltage, frequency, THD_voltage_1N, harmonic_3rd, harmonic_5th,harmonic_7th } = req.body;
 
-    if (!Voltage || !Frequency || !THD_voltage_1N || !harmonic_3rd || !harmonic_5th,harmonic_7th ) {
+    if (!voltage || !frequency || !THD_voltage_1N || !harmonic_3rd || !harmonic_5th,harmonic_7th ) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
