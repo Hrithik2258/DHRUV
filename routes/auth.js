@@ -1,10 +1,8 @@
 
 const express = require('express');
 const router = express.Router();
-// const User = require('../models/User');
 const User = require('../models/User')
 const { body, validationResult, check } = require('express-validator');
-// importing Bcrypt.js
 const bcrypt = require('bcrypt');
 // Importing the json web Token 
 var jwt = require('jsonwebtoken');
@@ -24,9 +22,7 @@ router.post('/createuser', [
     .withMessage('must contain a number')
     .exists()
     .withMessage("password can Not be blank"),
-  body('phoneno').isLength({ min: 8 }),
-  body('panNumber').isLength({ min: 10 }),
-  body('isAdmin').exists().withMessage("role can Not be blank"),
+
 
 
 
@@ -58,18 +54,6 @@ router.post('/createuser', [
       fullname: req.body.fullname,
       password: secPass,
       email: req.body.email,
-      alternateemail: req.body.alternateemail,
-      phoneno: req.body.phoneno,
-      role_id: req.body.role_id,
-      date_of_joining: req.body.date_of_joining,
-      profileImage: req.body.profileImage,
-      devRole: req.body.devRole,
-      reportingperson: req.body.reportingperson,
-      panNumber: req.body.panNumber,
-      alternatephone: req.body.alternatephone,
-      isAdmin: req.body.isAdmin,
-      parent: req.body.parent,
-      children: req.body.children
     })
     //passing the auth token
     const data = {
