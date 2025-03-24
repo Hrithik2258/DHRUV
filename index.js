@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 
 // Import Routes
 app.use("/api/power", require("./routes/power")); // Example: http://your-server-ip:5000/api/power
-
+app.use('/api/auth', require('./routes/auth'));    // Createing the user http://your-server-ip:5000/api/user/createuser
 // Connect to MongoDB
 const PORT = process.env.PORT || 5000;
 const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/yourDB"; // Use 127.0.0.1 instead of 0.0.0.0 for localhost
