@@ -1,82 +1,57 @@
-
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User')
-const { body, validationResult, check } = require('express-validator');
+const User = require('../models/User');
+const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
-// Importing the json web Token 
-var jwt = require('jsonwebtoken');
-
-
+const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'passwors$password';
-var fetchuser = require('../middleware/fetchuser')
+const fetchuser = require('../middleware/fetchuser');
 
-
+// ROUTE 1: Create a user
 router.post('/createuser', [
-  body('email').isEmail(),
-  body('fullname').isLength({ min: 3 }),
-  check('password')
-    .isLength({ min: 5 })
-    .withMessage('must be at least 5 chars long')
-    .matches(/\d/)
-    .withMessage('must contain a number')
-    .exists()
-    .withMessage("password can Not be blank"),
-
-
-
-
-
+  body('email').isEmail().withMessage('Enter a valid email'),
+  body('fullname').isLength({ min: 3 }).withMessage('Full name must be at least 3 characters'),
+  body('password')
+    .isLength({ min: 5 }).withMessage('Password must be at least 5 characters long')
+    .matches(/\d/).withMessage('Password must contain a number')
+    .notEmpty().withMessage("Password cannot be blank")
 ], async (req, res) => {
-  // if theere are eror send the bed request and error
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-
-
-  // Check Wheter the user with this email exist already
   try {
-
-
-    let user = await User.findOne({ email: req.body.email })
-    // console.log(user);
+    let user = await User.findOne({ email: req.body.email });
     if (user) {
-      return res.status(400).json({ error: " Sorry user with this email exist already" })
+      return res.status(400).json({ error: "Sorry, user with this email already exists" });
     }
 
-    // Securing the user with bcrypt.js
     const salt = await bcrypt.genSalt(10);
-    secPass = await bcrypt.hash(req.body.password, salt);
+    const secPass = await bcrypt.hash(req.body.password, salt);
 
-    // Creating a user
     user = await User.create({
       fullname: req.body.fullname,
       password: secPass,
       email: req.body.email,
-    })
-    //passing the auth token
+    });
+
     const data = {
       user: {
         id: user.id,
       }
-    }
+    };
     const authToken = jwt.sign(data, JWT_SECRET);
-    //  console.log(jwtData);
-    res.json({ authToken })
-    // Catching errors
+    res.json({ authToken });
+
   } catch (error) {
-    console.log(error.message)
-    res.status(500).send("some error OPccoured")
+    console.log(error.message);
+    res.status(500).send("Some error occurred");
   }
-})
+});
 
-
-
-// Making the Login Route abnd most of the Things will be same as previous so we can copy the upwards things  ROUTE:2
+// ROUTE 2: Login
 router.post('/login', [
-  body('email').isEmail(),
-
+  body('email').isEmail().withMessage('Enter a valid email'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -84,119 +59,79 @@ router.post('/login', [
   }
   const { email, password } = req.body;
   try {
-    let user = await User.findOne({ email: email });
+    let user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ error: " please Try to login with Correct credientials" });
+      return res.status(404).json({ error: "Please try to login with correct credentials" });
     }
     const passwordCompare = await bcrypt.compare(password, user.password);
     if (!passwordCompare) {
-      return res.status(404).json({ error: " please Try to login with Correct credientials" });
+      return res.status(404).json({ error: "Please try to login with correct credentials" });
     }
     const data = {
       user: {
         id: user.id,
       }
-    }
+    };
     const authToken = jwt.sign(data, JWT_SECRET);
-    //  console.log(jwtData);
-
-    res.json({ authToken })
-
+    res.json({ authToken });
   } catch (error) {
-    console.log(error.message)
-    res.status(500).send("Internal Server Error")
+    console.log(error.message);
+    res.status(500).send("Internal Server Error");
   }
+});
 
-})
-
-
-// Get The login  User detail  : POST"/api/auth/getuser ROUTE:3
-
+// ROUTE 3: Get Logged-in User Details
 router.post('/getuser', fetchuser, async (req, res) => {
-
   try {
-    userId = req.user.id;
-    const user = await User.findById(userId).select("-password")
+    const userId = req.user.id;
+    const user = await User.findById(userId).select("-password");
     res.send(user);
   } catch (error) {
-    console.log(error.message)
-    res.status(500).send("Internal Server Error")
+    console.log(error.message);
+    res.status(500).send("Internal Server Error");
   }
-})
+});
 
-
-//get the all user detail
-router.get('/getalluser',async (req, res) => {
+// ROUTE 4: Get All Users
+router.get('/getalluser', async (req, res) => {
   try {
-      const user = await User.find()
-      res.json(user)
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send("Cannot get all users");
   }
-  catch (error) {
-      console.log(error.message)
-      res.status(500).send("can Not get the all user")
-  }
-})
+});
 
-
-//get the all user detail
-router.get('/getalluser',async (req, res) => {
-  try {
-      const user = await User.find()
-      res.json(user)
-  }
-  catch (error) {
-      console.log(error.message)
-      res.status(500).send("can Not get the all user")
-  }
-})
-
-
-
-//update password
-// Update User Password: POST "/api/auth/updatepassword"
+// ROUTE 5: Update Password
 router.post('/updatepassword', fetchuser, [
-  check('oldPassword', 'Old password cannot be blank').exists(),
-  check('newPassword', 'New password must be at least 5 characters long').isLength({ min: 5 }),
+  body('oldPassword', 'Old password cannot be blank').notEmpty(),
+  body('newPassword', 'New password must be at least 5 characters long').isLength({ min: 5 })
 ], async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-
-  // Validate inputs
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-
   try {
-    // Fetch user
     const userId = req.user.id;
     const user = await User.findById(userId);
-
-    // Check if old password is correct
     const passwordCompare = await bcrypt.compare(oldPassword, user.password);
     if (!passwordCompare) {
       return res.status(401).json({ error: "Incorrect old password" });
     }
-
-    // Hash new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-    // Update user's password
     user.password = hashedPassword;
     await user.save();
-
     res.json({ message: "Password updated successfully" });
-
   } catch (error) {
-    console.log(error.message)
-    res.status(500).send("Internal Server Error")
+    console.log(error.message);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-
-
-
-// Update User Data: PUT "/api/auth/updateuser"
+// ROUTE 6: Update User Details
 router.put('/updateuser', fetchuser, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -204,36 +139,17 @@ router.put('/updateuser', fetchuser, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    const {
-      fullname,
-      email,
-      alternateemail,
-      phoneno,
-      role_id,
-      date_of_joining,
-      profileImage,
-      devRole,
-      reportingperson,
-      panNumber,
-      alternatephone,
-      isAdmin,
-      parent,
-      children
-    } = req.body;
-    if (fullname) user.fullname = fullname;
-    if (email) user.email = email;
-    if (alternateemail) user.alternateemail = alternateemail;
-    if (phoneno) user.phoneno = phoneno;
-    if (role_id) user.role_id = role_id;
-    if (date_of_joining) user.date_of_joining = date_of_joining;
-    if (profileImage) user.profileImage = profileImage;
-    if (devRole) user.devRole = devRole;
-    if (reportingperson) user.reportingperson = reportingperson;
-    if (panNumber) user.panNumber = panNumber;
-    if (alternatephone) user.alternatephone = alternatephone;
-    if (isAdmin) user.isAdmin = isAdmin;
-    if (parent) user.parent = parent;
-    if (children) user.children = children;
+
+    const fields = [
+      'fullname', 'email', 'alternateemail', 'phoneno', 'role_id',
+      'date_of_joining', 'profileImage', 'devRole', 'reportingperson',
+      'panNumber', 'alternatephone', 'isAdmin', 'parent', 'children'
+    ];
+
+    fields.forEach(field => {
+      if (req.body[field] !== undefined) user[field] = req.body[field];
+    });
+
     user = await user.save();
     res.json(user);
   } catch (error) {
@@ -242,7 +158,4 @@ router.put('/updateuser', fetchuser, async (req, res) => {
   }
 });
 
-
-
-
-module.exports = router
+module.exports = router;
